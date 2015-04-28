@@ -1,0 +1,57 @@
+#include "fl/Headers.h"
+
+double processFuzzyInput(double input){
+
+    using namespace fl;
+
+Engine* engine = new Engine;
+engine->setName("roll");
+
+InputVariable* inputVariable = new InputVariable;
+inputVariable->setEnabled(true);
+inputVariable->setName("roll");
+inputVariable->setRange(-180.000, 180.000);
+inputVariable->addTerm(new ZShape("unstable_left", -92.600, -0.476));
+inputVariable->addTerm(new Gaussian("stable", 0.000, 30.330));
+inputVariable->addTerm(new SShape("unstable_right", 2.380, 88.095));
+engine->addInputVariable(inputVariable);
+
+OutputVariable* outputVariable = new OutputVariable;
+outputVariable->setEnabled(true);
+outputVariable->setName("stability");
+outputVariable->setRange(0.000, 1.000);
+outputVariable->fuzzyOutput()->setAccumulation(new Maximum);
+outputVariable->setDefuzzifier(new Centroid(200));
+outputVariable->setDefaultValue(fl::nan);
+outputVariable->setLockPreviousOutputValue(false);
+outputVariable->setLockOutputValueInRange(false);
+outputVariable->addTerm(new ZShape("safe", 0.040, 0.993));
+outputVariable->addTerm(new SShape("danger", 0.012, 0.960));
+engine->addOutputVariable(outputVariable);
+
+RuleBlock* ruleBlock = new RuleBlock;
+ruleBlock->setEnabled(true);
+ruleBlock->setName("");
+ruleBlock->setConjunction(new Minimum);
+ruleBlock->setDisjunction(new Maximum);
+ruleBlock->setActivation(new Minimum);
+ruleBlock->addRule(fl::Rule::parse("if roll is unstable_left then stability is danger", engine));
+ruleBlock->addRule(fl::Rule::parse("if roll is stable then stability is safe", engine));
+ruleBlock->addRule(fl::Rule::parse("if roll is unstable_right then stability is danger", engine));
+engine->addRuleBlock(ruleBlock);
+
+
+    engine->configure("", "", "Minimum", "Maximum", "Centroid");
+
+    std::string status;
+    if (not engine->isReady(&status))
+        throw Exception("Engine not ready. "
+            "The following errors were encountered:\n" + status, FL_AT);
+	
+	
+       	inputVariable->setInputValue(input);
+       	 engine->process();
+	return outputVariable->getOutputValue();
+     
+}
+
