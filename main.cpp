@@ -31,6 +31,16 @@
 #endif
 
 
+//시뮬레이션 변수선언
+dBodyID body;
+dMass m;
+dWorldID world;
+dSpaceID space;
+dGeomID geom;
+dGeomID ground;
+#define RADIUS 1
+
+
 void start()
 {
   
@@ -40,11 +50,25 @@ void start()
 
 void simLoop (int pause)
 {
-	//일단 비워두고요..
-	//  
-	float xyz[3],hpr[3];
-  	dsGetViewpoint (xyz,hpr);
-	printf("x = %f, y = %f, z = %f\n",xyz[0],xyz[1],xyz[2]);
+  
+  dWorldStep(world,0.1);
+
+    //공 그리기
+  dsSetColor (1,1,1);
+  const dReal *SPos = dBodyGetPosition(body);
+  const dReal *SRot = dBodyGetRotation(body);
+  float spos[3] = {SPos[0], SPos[1], SPos[2]};
+  float srot[12] = { SRot[0], SRot[1], SRot[2],
+		     SRot[3], SRot[4], SRot[5],
+                     SRot[6], SRot[7], SRot[8],
+                     SRot[9], SRot[10], SRot[11] };
+  dsDrawSphere
+  (
+    spos, 
+    srot, 
+    RADIUS
+  );
+	
 }
 
 
@@ -54,8 +78,10 @@ void command (int cmd)
   
 
      // 게임 인터페이스 w,a,s,d 로 이동하기!
-  float xyz[3],hpr[3];
+  static float xyz[3],hpr[3];
   dsGetViewpoint (xyz,hpr);
+  printf("x = %f, y = %f, z = %f\n",xyz[0],xyz[1],xyz[2]);
+
   switch (cmd) {
 	case 'w' : xyz[0] += cos(hpr[0] * M_PI / 180)*0.3;
 		   xyz[1] += sin(hpr[0] * M_PI / 180)*0.3; break;
@@ -81,6 +107,9 @@ void command (int cmd)
 
 int main (int argc, char **argv)
 {
+
+ 
+
   // setup pointers to callback functions
   dsFunctions fn;
   fn.version = DS_VERSION;
@@ -91,14 +120,31 @@ int main (int argc, char **argv)
   fn.path_to_textures = "./textures/";	// uses default
 
   //create world
-  dWorldID world;
+  dInitODE2(0);
   world = dWorldCreate();
-  dWorldSetGravity (world,0,0,-9.8);
+  dWorldSetGravity (world,0,0,-0.1);
+  space = dSimpleSpaceCreate (0);
+  ground = dCreatePlane(space,0,0,1,0);
+
+  //create object
+  body = dBodyCreate(world);
+  dBodySetPosition (body, 0, 0, 5);
+  dMassSetSphere (&m,1,RADIUS);
+  geom = dCreateSphere(0, RADIUS);
+  dGeomSetBody(geom,body);
+
+
+  
 
   // run simulation
   dsSimulationLoop (argc,argv,400,400,&fn);
 
+  //clean Up memory
+  dSpaceDestroy(space);
+  dBodyDestroy(body);
+  dWorldDestroy(world);
+  dCloseODE();
 
-  //dWorldDestroy
+
   return 0;
 }
