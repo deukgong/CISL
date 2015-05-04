@@ -2,7 +2,7 @@
 
 bin: 
 
-	g++ main.cpp -lGL -lGLU -ldrawstuff -lX11 -lode \
+	g++ main.cpp -lode -ldrawstuff -lGL -lGLU -lX11 -lpthread  \
 	-o main 
 
 
