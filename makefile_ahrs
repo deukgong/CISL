@@ -1,0 +1,7 @@
+build:
+	g++ -O2 -std=c++11 -I./ -c -o ahrs.o ahrs.cpp	
+	g++ -I./ -c main.cpp
+	g++ -O2 -o test_ahrs ahrs.o main.o -lm -lpthread 
+
+clean:
+
